@@ -5,19 +5,35 @@ const controller = require('./controllers/postController');
 
 function createApp() {
   const app = express();
+
   app.use(express.json());
 
+  // Resource-oriented post routes
   app.use('/', postRoutes);
+
+  // Safe internal failure demonstration endpoint
   app.get('/explode', controller.explode);
 
-  // TODO:
-  // - make public contract resource-oriented
-  // - standardise success envelope
-  // - standardise error envelope
-  // - add pagination metadata on list route
-  // - cap limit server-side (default limit = 2 for exercise)
-  // - stop exposing old verb routes as public contract
-  // - expose safe internal failure route for testing/demo
+  // Handle malformed JSON requests
+  app.use((err, req, res, next) => {
+    if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+      return res.status(400).json({
+        error: {
+          code: 'INVALID_JSON',
+          message: 'Request body contains invalid JSON'
+        }
+      });
+    }
+
+    console.error('Unhandled server error:', err.message);
+
+    return res.status(500).json({
+      error: {
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'An unexpected error occurred'
+      }
+    });
+  });
 
   return app;
 }
@@ -25,8 +41,9 @@ function createApp() {
 if (require.main === module) {
   const app = createApp();
   const port = 3000;
+
   app.listen(port, () => {
-    console.log(`Starter API listening on port ${port}`);
+    console.log(`API listening on port ${port}`);
   });
 }
 
