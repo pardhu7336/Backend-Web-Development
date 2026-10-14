@@ -1,34 +1,34 @@
-function sendList(res, rows, meta = {}) {
-  return res.status(200).json({
-    data: rows,
-    meta
-  });
+function sendList(res, result) {
+return res.status(200).json({
+data: result.data,
+meta: result.meta
+});
 }
 
 function sendCreated(res, post) {
-  return res.status(201).json({
-    data: post
-  });
+return res.status(201).json({
+data: post
+});
 }
 
 function sendOk(res, payload) {
-  return res.status(200).json({
-    data: payload
-  });
+return res.status(200).json({
+data: payload
+});
 }
 
-function sendError(res, status, payload = {}) {
-  return res.status(status).json({
-    error: {
-      code: payload.code || 'REQUEST_FAILED',
-      message: payload.message || 'Request failed'
-    }
-  });
+function sendError(res, status, code, message) {
+return res.status(status).json({
+error: {
+code,
+message
+}
+});
 }
 
 module.exports = {
-  sendList,
-  sendCreated,
-  sendOk,
-  sendError
+sendList,
+sendCreated,
+sendOk,
+sendError
 };

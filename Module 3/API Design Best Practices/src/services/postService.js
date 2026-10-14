@@ -1,70 +1,69 @@
 const store = require('../data/postStore');
 
-const DEFAULT_LIMIT = 2;
-const MAX_LIMIT = 100;
-
-function parsePositiveInt(value, fallback) {
-  if (value === undefined || value === null || value === '') {
-    return fallback;
-  }
-
-  const parsed = Number(value);
-
-  if (!Number.isSafeInteger(parsed) || parsed < 1) {
-    return fallback;
-  }
-
-  return parsed;
-}
-
 function listPosts(query = {}) {
-  const page = parsePositiveInt(query.page, 1);
-  const requestedLimit = parsePositiveInt(query.limit, DEFAULT_LIMIT);
-  const limit = Math.min(requestedLimit, MAX_LIMIT);
+const requestedPage = Number.parseInt(query.page, 10);
+const requestedLimit = Number.parseInt(query.limit, 10);
 
-  const allPosts = store.getAllPosts();
-  const total = allPosts.length;
-  const totalPages = Math.ceil(total / limit);
-  const startIndex = (page - 1) * limit;
+const page = Number.isFinite(requestedPage) && requestedPage > 0
+? requestedPage
+: 1;
 
-  const data = allPosts.slice(startIndex, startIndex + limit);
+const limit = Number.isFinite(requestedLimit) && requestedLimit > 0
+? Math.min(requestedLimit, 100)
+: 10;
 
-  return {
-    data,
-    meta: {
-      page,
-      limit,
-      total,
-      totalPages
-    }
-  };
+const allPosts = store.getAllPosts();
+const total = allPosts.length;
+const pages = Math.ceil(total / limit);
+
+const startIndex = (page - 1) * limit;
+const data = allPosts.slice(startIndex, startIndex + limit);
+
+return {
+data,
+meta: {
+page,
+limit,
+total,
+pages
+}
+};
 }
 
 function getPost(id) {
-  return store.getPostById(id);
+return store.getPostById(id);
 }
 
 function createPost(body = {}) {
-  return store.createPost({
-    title: body.title,
-    author: body.author
-  });
+return store.createPost({
+title: body.title,
+author: body.author
+});
 }
 
 function likePost(id) {
-  return store.incrementLikes(id);
+const post = store.incrementLikes(id);
+
+if (!post) {
+const err = new Error('Post not found');
+err.statusCode = 404;
+err.code = 'NOT_FOUND';
+throw err;
+}
+
+return post;
 }
 
 function explode() {
-  const err = new Error('Internal operation failed');
-  err.statusCode = 500;
-  throw err;
+const err = new Error('SQLITE_CONSTRAINT in posts table');
+err.statusCode = 500;
+throw err;
 }
 
 module.exports = {
-  listPosts,
-  getPost,
-  createPost,
-  likePost,
-  explode
+listPosts,
+getPost,
+createPost,
+likePost,
+explode
 };
